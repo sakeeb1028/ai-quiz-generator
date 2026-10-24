@@ -14,6 +14,11 @@ dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
 const app = express();
 app.use(cors({ origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173' }));
 app.use(express.json({ limit: '128kb' }));
+app.use((req, _res, next) => {
+  const apiPath = req.query.__vercel_api_path;
+  if (typeof apiPath === 'string' && apiPath.startsWith('/api/')) req.url = apiPath;
+  next();
+});
 const mode = process.env.QUIZ_GENERATION_MODE === 'demo' ? 'demo' : 'gemini';
 const service: QuestionGenerationService = mode === 'demo'
   ? new DemoQuestionService()
@@ -65,8 +70,5 @@ app.post('/api/quizzes/:id/submit', (req, res) => {
     return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid answers.' });
   }
 });
-
-const port = Number(process.env.PORT ?? 3001);
-if (!process.env.VERCEL) app.listen(port, () => console.log(`Quiz API listening on http://localhost:${port}`));
 
 export default app;

@@ -23,7 +23,7 @@ npm run build
 
 ## Deploy one app to Vercel
 
-The repository is configured as one Vercel project: Vite output is served as a static site from `client/dist`, and `/api/*` is handled by an Express Node.js Function. Vercel does not run a persistent Express listener; the Express app is exported from `server/src/index.ts` and adapted by `api/[...path].ts`. Quiz state is encrypted into an opaque, authenticated session token so submission can be handled by another serverless invocation without a database. The browser never receives plaintext answer keys.
+The repository is configured as one Vercel project: Vite output is served as a static site from `client/dist`, and `/api/*` is handled by an Express Node.js Function. Vercel does not run a persistent Express listener; the Express app is exported from `server/src/index.ts` through the standard `api/index.ts` function entry. Quiz state is encrypted into an opaque, authenticated session token so submission can be handled by another serverless invocation without a database. The browser never receives plaintext answer keys.
 
 1. Push the project to a Git provider and import that repository in Vercel.
 2. Set **Root Directory** to the repository root. Keep **Include source files outside of the Root Directory** enabled if the project is in a monorepo.
@@ -42,7 +42,7 @@ The repository is configured as one Vercel project: Vite output is served as a s
 
 `GEMINI_MODEL` defaults to `gemini-3.1-flash-lite`. Check Google's [model list](https://ai.google.dev/gemini-api/docs/models) and [pricing page](https://ai.google.dev/gemini-api/docs/pricing) for current model IDs, Free Tier status, and your account's quotas before changing it. Model access can vary by account and region.
 
-`vercel.json` gives the API Function up to 60 seconds for a request and rewrites frontend routes to the SPA entry. The generation handler retains the 10-per-minute in-process rate limit; serverless instances do not share memory, so configure Vercel Firewall rate limiting on `POST /api/quizzes` as well if you need a deployment-wide limit.
+`vercel.json` first rewrites `/api/:path*` to the shared `api/index.ts` Function while carrying the original API path to Express. The later SPA fallback excludes `/api/*`, so frontend routes cannot consume API requests. The Function is configured for up to 60 seconds. The generation handler retains the 10-per-minute in-process rate limit; serverless instances do not share memory, so configure Vercel Firewall rate limiting on `POST /api/quizzes` as well if you need a deployment-wide limit.
 
 ## API and security
 
